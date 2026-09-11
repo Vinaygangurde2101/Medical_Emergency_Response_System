@@ -76,6 +76,10 @@ const connectDB = async () => {
 
 connectDB();
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on http://127.0.0.1:${PORT}`);
+  });
+}
+
+module.exports = app;
