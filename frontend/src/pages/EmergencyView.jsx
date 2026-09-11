@@ -78,6 +78,8 @@ export default function EmergencyView() {
     }
   };
 
+  const [familyDispatchData, setFamilyDispatchData] = useState(null);
+
   const handleContactFamily = async () => {
     setIsContactingFamily(true);
     try {
@@ -91,6 +93,9 @@ export default function EmergencyView() {
 
       const res = await triggerFamilyContact({ qrId, location: coords });
       setFamilyNotified(true);
+      if (res.data.dispatchData) {
+        setFamilyDispatchData(res.data.dispatchData);
+      }
       toast.success(res.data.msg || 'Emergency Family Contact Dispatched!');
     } catch (err) {
       toast.error('Failed to trigger emergency contact gateway.');
@@ -291,9 +296,29 @@ export default function EmergencyView() {
               </div>
 
               {familyNotified ? (
-                <div className="w-full bg-emerald-50 text-emerald-700 p-4 rounded-2xl flex items-center gap-3 text-xs font-extrabold border border-emerald-100">
-                  <CheckCircle2 size={20} className="flex-shrink-0" />
-                  Emergency family contacts notified!
+                <div className="w-full space-y-2">
+                  <div className="w-full bg-emerald-50 text-emerald-700 p-4 rounded-2xl flex items-center gap-3 text-xs font-extrabold border border-emerald-100">
+                    <CheckCircle2 size={20} className="flex-shrink-0" />
+                    Emergency family contacts notified & logged!
+                  </div>
+                  {familyDispatchData?.whatsappUrl && (
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <a
+                        href={familyDispatchData.whatsappUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="py-3 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                      >
+                        <Phone size={14} /> Send WhatsApp
+                      </a>
+                      <a
+                        href={familyDispatchData.smsUrl}
+                        className="py-3 px-2 bg-gray-900 hover:bg-black text-white rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm"
+                      >
+                        <Phone size={14} /> Send SMS
+                      </a>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <button

@@ -135,6 +135,7 @@ router.post('/contact-family', async (req, res) => {
     if (!qrId) return res.status(400).json({ msg: 'QR Identifier required' });
 
     let patientName = 'Patient';
+    let targetPhone = '+919876543210';
     let contactCount = 1;
 
     if (global.isDbConnected) {
@@ -142,8 +143,11 @@ router.post('/contact-family', async (req, res) => {
       if (profile) {
         patientName = profile.user?.name || 'Patient';
         contactCount = profile.emergencyContacts?.length || 1;
+        if (profile.emergencyContacts?.[0]?.phone) {
+          targetPhone = profile.emergencyContacts[0].phone;
+        }
 
-        const notif = await EmergencyNotification.create({
+        await EmergencyNotification.create({
           qrId,
           patientName,
           contactName: profile.emergencyContacts?.[0]?.name || 'Primary Contact',
@@ -164,9 +168,27 @@ router.post('/contact-family', async (req, res) => {
     }
 
     demoNotifications.push({ qrId, timestamp: new Date() });
+
+    // Format clean phone number & location text for emergency dispatch
+    const cleanPhone = targetPhone.replace(/[^\d+]/g, '');
+    const locText = location?.lat && location?.lng 
+      ? `Location: https://maps.google.com/?q=${location.lat},${location.lng}`
+      : 'Emergency location logged';
+
+    const alertMessage = `🚨 MERS EMERGENCY ALERT: An emergency responder has scanned the Medical QR ID for ${patientName}. ${locText}. Please respond immediately.`;
+
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${encodeURIComponent(cleanPhone)}&text=${encodeURIComponent(alertMessage)}`;
+    const smsUrl = `sms:${cleanPhone}?body=${encodeURIComponent(alertMessage)}`;
+
     res.json({
       success: true,
-      msg: `Emergency alert dispatched to ${contactCount} registered family contact(s) via proxy gateway.`
+      msg: `Emergency alert dispatched to ${contactCount} registered family contact(s) via proxy gateway.`,
+      dispatchData: {
+        patientName,
+        contactsNotified: contactCount,
+        whatsappUrl,
+        smsUrl
+      }
     });
 
   } catch (err) {
