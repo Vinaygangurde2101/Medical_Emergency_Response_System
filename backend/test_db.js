@@ -1,10 +1,11 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const User = require('./models/User');
 const Profile = require('./models/Profile');
 
 async function run() {
   try {
-    await mongoose.connect('mongodb+srv://vinaygangurde2107_db_user:J4wt0ybZPJIIDch5@mers.ezqq3tr.mongodb.net/mers_sid?appName=mers');
+    await mongoose.connect(process.env.MONGO_URI);
     console.log("Connected");
     const user = new User({ name: 'Test', email: 'test4@test.com', phone: '123', password: 'abc' });
     await user.save();
