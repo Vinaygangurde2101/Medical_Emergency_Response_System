@@ -7,15 +7,40 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization']
+}));
 
-// Global variable to track DB status
-global.isDbConnected = false;
-
-const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/mers_sid';
+// Serverless DB Connection Middleware
+let dbPromise = null;
+app.use(async (req, res, next) => {
+  if (mongoose.connection.readyState === 1) {
+    global.isDbConnected = true;
+    return next();
+  }
+  
+  if (!dbPromise) {
+    dbPromise = connectDB();
+  }
+  
+  try {
+    await dbPromise;
+  } catch (e) {
+    dbPromise = null;
+  }
+  next();
+});
 
 // Root route for health check
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'online',
+    database: global.isDbConnected ? 'connected' : 'offline (Demo Mode Active)',
+    readyState: mongoose.connection.readyState
+  });
+});
 app.get('/', (req, res) => {
   res.json({
     status: 'online',

@@ -63,7 +63,10 @@ router.post('/register', async (req, res) => {
     });
   } catch (err) {
     console.error('Hospital registration error:', err);
-    res.status(500).json({ msg: 'Server Error' });
+    if (err.code === 11000) {
+      return res.status(400).json({ msg: 'A hospital with this license or email already exists' });
+    }
+    res.status(500).json({ msg: err.message || 'Hospital registration failed' });
   }
 });
 

@@ -102,7 +102,10 @@ router.post('/register', async (req, res) => {
 
   } catch (err) {
     console.error('Register Error:', err);
-    res.status(500).json({ msg: 'Server Error' });
+    if (err.code === 11000) {
+      return res.status(400).json({ msg: 'An account with this email address already exists' });
+    }
+    res.status(500).json({ msg: err.message || 'Registration failed due to a server error' });
   }
 });
 

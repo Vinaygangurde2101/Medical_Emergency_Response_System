@@ -44,4 +44,4 @@ const AccessLogSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('AccessLog', AccessLogSchema);
+module.exports = mongoose.models.AccessLog || mongoose.model('AccessLog', AccessLogSchema);

@@ -24,4 +24,4 @@ const EmergencyNotificationSchema = new mongoose.Schema({
   responderNotes: String
 }, { timestamps: true });
 
-module.exports = mongoose.model('EmergencyNotification', EmergencyNotificationSchema);
+module.exports = mongoose.models.EmergencyNotification || mongoose.model('EmergencyNotification', EmergencyNotificationSchema);

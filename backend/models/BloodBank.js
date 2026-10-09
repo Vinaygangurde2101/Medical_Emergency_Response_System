@@ -43,4 +43,4 @@ const BloodBankSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('BloodBank', BloodBankSchema);
+module.exports = mongoose.models.BloodBank || mongoose.model('BloodBank', BloodBankSchema);
