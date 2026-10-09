@@ -87,7 +87,12 @@ export default function Register() {
       navigate('/dashboard');
     } catch (err) {
       console.error('Registration Error:', err);
-      toast.error(err.response?.data?.msg || 'Registration failed. Please try again.');
+      const errMsg = typeof err.response?.data?.msg === 'string'
+        ? err.response.data.msg
+        : (typeof err.response?.data === 'string' && err.response.data.length < 100
+            ? err.response.data
+            : (err.message || 'Registration failed. Please check network/credentials.'));
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
@@ -115,7 +120,10 @@ export default function Register() {
       toast.success(res.data?.msg || 'Hospital registration submitted! Pending Admin Verification.');
     } catch (err) {
       console.error('Hospital Reg Error:', err);
-      toast.error(err.response?.data?.msg || 'Hospital registration failed.');
+      const errMsg = typeof err.response?.data?.msg === 'string'
+        ? err.response.data.msg
+        : (err.message || 'Hospital registration failed.');
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
