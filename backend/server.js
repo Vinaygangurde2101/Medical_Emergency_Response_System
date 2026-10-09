@@ -13,6 +13,16 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'x-auth-token', 'Authorization']
 }));
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, x-auth-token, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
+
 // Serverless DB Connection Middleware
 let dbPromise = null;
 app.use(async (req, res, next) => {
@@ -34,7 +44,7 @@ app.use(async (req, res, next) => {
 });
 
 // Root route for health check
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({
     status: 'online',
     database: global.isDbConnected ? 'connected' : 'offline (Demo Mode Active)',
@@ -48,16 +58,21 @@ app.get('/', (req, res) => {
   });
 });
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/patient', require('./routes/patient'));
-app.use('/api/emergency', require('./routes/emergency'));
-app.use('/api/hospital', require('./routes/hospital'));
-app.use('/api/blood-banks', require('./routes/bloodBank'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/ai', require('./routes/aiChat'));
-app.use('/api/analyze', require('./routes/analyze'));
-app.use('/api/schedule', require('./routes/schedule'));
+// Dual-Mounted Routes for Vercel Serverless & Standard Hosting
+const mountRoute = (path, router) => {
+  app.use(`/api${path}`, router);
+  app.use(path, router);
+};
+
+mountRoute('/auth', require('./routes/auth'));
+mountRoute('/patient', require('./routes/patient'));
+mountRoute('/emergency', require('./routes/emergency'));
+mountRoute('/hospital', require('./routes/hospital'));
+mountRoute('/blood-banks', require('./routes/bloodBank'));
+mountRoute('/admin', require('./routes/admin'));
+mountRoute('/ai', require('./routes/aiChat'));
+mountRoute('/analyze', require('./routes/analyze'));
+mountRoute('/schedule', require('./routes/schedule'));
 
 // Robust DB Connection Strategy (Primary Cloud -> Local Fallback -> Demo Mode)
 const connectDB = async () => {

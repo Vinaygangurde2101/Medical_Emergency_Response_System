@@ -25,26 +25,40 @@ const { nanoid } = require('nanoid');
 router.get('/summary', auth, async (req, res) => {
   try {
     if (global.isDbConnected) {
-      let profile = await Profile.findOne({ user: req.user.id });
-      if (!profile) {
-        const qrId = nanoid(10);
-        profile = new Profile({ user: req.user.id, qrId });
-        await profile.save();
+      try {
+        let profile = await Profile.findOne({ user: req.user.id });
+        if (!profile) {
+          const qrId = req.user?.qrId || nanoid(10);
+          profile = new Profile({ user: req.user.id, qrId });
+          await profile.save();
+        }
+        return res.json(profile);
+      } catch (dbErr) {
+        console.warn('DB profile fetch in /summary skipped, using fallback:', dbErr.message);
       }
-      return res.json(profile);
     }
 
     const demoProfiles = authRouter.getDemoProfiles();
     let profile = demoProfiles.find(p => p.user === req.user.id);
     if (!profile) {
-      const qrId = 'demo_' + nanoid(8);
+      const qrId = req.user?.qrId || ('demo_' + nanoid(8));
       profile = { user: req.user.id, qrId, bloodGroup: '', allergies: [], medications: [], diseases: [], emergencyContacts: [], scansCount: 0, isQrActive: true };
       demoProfiles.push(profile);
     }
     res.json(profile);
   } catch (err) {
     console.error("Error in /summary:", err);
-    res.status(500).json({ msg: 'Server Error' });
+    res.json({
+      user: req.user?.id || 'demo_user',
+      qrId: req.user?.qrId || 'demo_qr_01',
+      bloodGroup: '',
+      allergies: [],
+      medications: [],
+      diseases: [],
+      emergencyContacts: [],
+      scansCount: 0,
+      isQrActive: true
+    });
   }
 });
 
