@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
-const mammoth = require('mammoth');
+let pdfParse = null;
+try { pdfParse = require('pdf-parse'); } catch (e) {}
+let mammoth = null;
+try { mammoth = require('mammoth'); } catch (e) {}
 const Schedule = require('../models/Schedule');
 
 const upload = multer({ 

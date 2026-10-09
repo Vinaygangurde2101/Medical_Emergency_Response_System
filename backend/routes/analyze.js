@@ -1,7 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { GoogleGenAI } = require('@google/genai');
+let GoogleGenAI = null;
+try {
+  GoogleGenAI = require('@google/genai').GoogleGenAI;
+} catch (e) {
+  try {
+    GoogleGenAI = require('@google/generative-ai').GoogleGenerativeAI;
+  } catch (e2) {}
+}
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();

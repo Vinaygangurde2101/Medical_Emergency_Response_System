@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { GoogleGenAI } = require('@google/genai');
+let GoogleGenAI = null;
+try {
+  GoogleGenAI = require('@google/genai').GoogleGenAI;
+} catch (e) {
+  try {
+    GoogleGenAI = require('@google/generative-ai').GoogleGenerativeAI;
+  } catch (e2) {}
+}
 
 // Emergency first-aid system instructions
 const EMERGENCY_SYSTEM_PROMPT = `
@@ -84,7 +91,7 @@ router.post('/chat', async (req, res) => {
     const { query } = req.body;
     if (!query) return res.status(400).json({ msg: 'Emergency query required' });
 
-    if (process.env.GEMINI_API_KEY) {
+    if (process.env.GEMINI_API_KEY && GoogleGenAI) {
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
         const response = await ai.models.generateContent({
