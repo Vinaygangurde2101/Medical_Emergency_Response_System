@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Shield, Zap, Lock, Activity, ArrowRight, CheckCircle2, QrCode, PhoneCall, Sparkles } from 'lucide-react';
 import MainLayout from '../layouts/MainLayout';
 import { useTranslation } from '../context/LanguageContext';
+import AppointmentSearchWidget from '../components/AppointmentSearchWidget';
 
 export default function Landing() {
   const { t } = useTranslation();
@@ -94,6 +95,9 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* Live OPD & ER Appointment Search Widget */}
+      <AppointmentSearchWidget />
 
       {/* Core Features */}
       <section className="bg-white py-20 sm:py-28 px-4 sm:px-8 relative z-10 border-y border-slate-100">

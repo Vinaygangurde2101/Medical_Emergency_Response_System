@@ -30,6 +30,7 @@ export const fetchEmergencyInfo = (qrId) => API.get(`/emergency/${qrId}`);
 export const triggerFamilyContact = (data) => API.post('/emergency/contact-family', data);
 
 // Verified Hospital Services
+export const registerHospital = (data) => API.post('/hospital/register', data);
 export const hospitalLogin = (data) => API.post('/hospital/login', data);
 export const fetchVerifiedHospitalProfile = (qrId) => API.get(`/hospital/patient-profile/${qrId}`);
 
@@ -46,5 +47,25 @@ export const analyzeReport = (formData) => API.post('/analyze', formData, {
 export const fetchAdminStats = () => API.get('/admin/stats');
 export const fetchAdminLogs = () => API.get('/admin/access-logs');
 export const fetchAdminHospitals = () => API.get('/admin/hospitals');
+export const addAdminHospital = (data) => API.post('/admin/hospitals', data);
+export const toggleAdminHospitalApproval = (id) => API.put(`/admin/hospitals/${id}/toggle-approval`);
+export const fetchAdminUsers = () => API.get('/admin/users');
+export const toggleAdminUserQr = (userId) => API.put(`/admin/users/${userId}/toggle-qr`);
+export const fetchAdminBloodBanks = () => API.get('/admin/blood-banks');
+export const addAdminBloodBank = (data) => API.post('/admin/blood-banks', data);
+export const updateAdminBloodBankInventory = (id, data) => API.put(`/admin/blood-banks/${id}/inventory`, data);
+export const fetchAdminEmergencyNotifs = () => API.get('/admin/emergency-notifs');
+
+// Schedule & Appointment Desk Services
+export const lookupSchedule = (query) => API.get('/schedule/lookup', { params: { query } });
+export const fetchScheduleAll = () => API.get('/schedule/all');
+export const uploadScheduleFile = (data) => API.post('/schedule/upload', data);
+export const uploadScheduleDocumentFile = (formData) => API.post('/schedule/upload-file', formData, {
+  headers: { 'Content-Type': 'multipart/form-data' }
+});
+export const addSingleSchedule = (data) => API.post('/schedule/add-single', data);
+export const updateScheduleStatus = (data) => API.put('/schedule/update-status', data);
+export const deleteScheduleSingle = (id) => API.delete(`/schedule/delete/${id}`);
+export const clearScheduleAll = () => API.delete('/schedule/clear-all');
 
 export default API;

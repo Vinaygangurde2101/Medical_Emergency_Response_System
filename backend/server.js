@@ -32,6 +32,7 @@ app.use('/api/blood-banks', require('./routes/bloodBank'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/ai', require('./routes/aiChat'));
 app.use('/api/analyze', require('./routes/analyze'));
+app.use('/api/schedule', require('./routes/schedule'));
 
 // Robust DB Connection Strategy (Primary Cloud -> Local Fallback -> Demo Mode)
 const connectDB = async () => {

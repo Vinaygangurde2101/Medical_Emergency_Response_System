@@ -19,16 +19,28 @@ const auth = (req, res, next) => {
   }
 };
 
+const { nanoid } = require('nanoid');
+
 // @route   GET api/patient/summary
 router.get('/summary', auth, async (req, res) => {
   try {
     if (global.isDbConnected) {
-      const profile = await Profile.findOne({ user: req.user.id });
+      let profile = await Profile.findOne({ user: req.user.id });
+      if (!profile) {
+        const qrId = nanoid(10);
+        profile = new Profile({ user: req.user.id, qrId });
+        await profile.save();
+      }
       return res.json(profile);
     }
 
     const demoProfiles = authRouter.getDemoProfiles();
-    const profile = demoProfiles.find(p => p.user === req.user.id);
+    let profile = demoProfiles.find(p => p.user === req.user.id);
+    if (!profile) {
+      const qrId = 'demo_' + nanoid(8);
+      profile = { user: req.user.id, qrId, bloodGroup: '', allergies: [], medications: [], diseases: [], emergencyContacts: [], scansCount: 0, isQrActive: true };
+      demoProfiles.push(profile);
+    }
     res.json(profile);
   } catch (err) {
     console.error("Error in /summary:", err);
@@ -42,17 +54,29 @@ router.put('/update', auth, async (req, res) => {
     const updateData = req.body;
     
     if (global.isDbConnected) {
-      const profile = await Profile.findOneAndUpdate(
-        { user: req.user.id },
-        { $set: updateData },
-        { new: true }
-      );
+      let profile = await Profile.findOne({ user: req.user.id });
+      if (!profile) {
+        const qrId = nanoid(10);
+        profile = new Profile({ user: req.user.id, qrId, ...updateData });
+        await profile.save();
+      } else {
+        profile = await Profile.findOneAndUpdate(
+          { user: req.user.id },
+          { $set: updateData },
+          { new: true }
+        );
+      }
       return res.json(profile);
     }
 
     const demoProfiles = authRouter.getDemoProfiles();
-    const index = demoProfiles.findIndex(p => p.user === req.user.id);
-    if (index === -1) return res.status(404).json({ msg: 'Profile not found' });
+    let index = demoProfiles.findIndex(p => p.user === req.user.id);
+    if (index === -1) {
+      const qrId = 'demo_' + nanoid(8);
+      const newP = { user: req.user.id, qrId, bloodGroup: '', allergies: [], medications: [], diseases: [], emergencyContacts: [], scansCount: 0, isQrActive: true, ...updateData };
+      demoProfiles.push(newP);
+      return res.json(newP);
+    }
 
     demoProfiles[index] = { ...demoProfiles[index], ...updateData };
     res.json(demoProfiles[index]);

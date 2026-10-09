@@ -27,6 +27,10 @@ const defaultDemoProfile = {
 };
 
 // @route   GET api/emergency/:qrId
+const mongoose = require('mongoose');
+const { nanoid } = require('nanoid');
+
+// @route   GET api/emergency/:qrId
 // @desc    MINIMAL PUBLIC RESPONDER EMERGENCY ACCESS - MINIMUM DATA EXPOSURE
 router.get('/:qrId', async (req, res) => {
   try {
@@ -34,8 +38,34 @@ router.get('/:qrId', async (req, res) => {
     const cleanQrId = qrId ? qrId.trim() : '';
 
     if (global.isDbConnected) {
-      let profile = await Profile.findOne({ qrId: cleanQrId }).populate('user', 'name');
+      let profile = await Profile.findOne({ qrId: cleanQrId }).populate('user', 'name email phone');
       
+      // If not found by qrId, check if cleanQrId is a valid User ObjectId
+      if (!profile && mongoose.Types.ObjectId.isValid(cleanQrId)) {
+        profile = await Profile.findOne({ user: cleanQrId }).populate('user', 'name email phone');
+      }
+
+      // If still not found, check if a User exists by ID or Email
+      if (!profile) {
+        let userMatch = null;
+        if (mongoose.Types.ObjectId.isValid(cleanQrId)) {
+          userMatch = await User.findById(cleanQrId);
+        }
+        if (!userMatch) {
+          userMatch = await User.findOne({ email: cleanQrId.toLowerCase() });
+        }
+
+        if (userMatch) {
+          profile = new Profile({
+            user: userMatch._id,
+            qrId: nanoid(10),
+            isQrActive: true
+          });
+          await profile.save();
+          profile.user = userMatch;
+        }
+      }
+
       // Auto-create sample profile if scanning demo_qr_01 in database mode
       if (!profile && cleanQrId.toLowerCase().includes('demo')) {
         let demoUser = await User.findOne({ email: 'demo.patient@mers.com' });
@@ -83,9 +113,16 @@ router.get('/:qrId', async (req, res) => {
       });
 
       // SECURE RESPONSE: Return MINIMAL public emergency view ONLY
+      const fullName = profile.user?.name || 'Emergency Patient';
+      const nameParts = fullName.split(' ');
+      const displayName = nameParts.length > 1 
+        ? `${nameParts[0]} ${nameParts[1][0]}.` 
+        : fullName;
+
       return res.json({
         qrId: profile.qrId,
-        patientName: profile.user?.name ? `${profile.user.name.split(' ')[0]} ${profile.user.name.split(' ')[1]?.[0] || ''}.` : 'Emergency Patient',
+        patientName: displayName,
+        fullPatientName: fullName,
         isQrActive: true,
         hasEmergencyContacts: (profile.emergencyContacts && profile.emergencyContacts.length > 0),
         emergencyOptions: ['CONTACT_FAMILY', 'CALL_108', 'FIRST_AID', 'BLOOD_BANK', 'HOSPITAL_LOGIN']
@@ -94,7 +131,7 @@ router.get('/:qrId', async (req, res) => {
 
     // Demo Mode Fallback
     const demoProfiles = authRouter.getDemoProfiles();
-    let profile = demoProfiles.find(p => p.qrId === cleanQrId);
+    let profile = demoProfiles.find(p => p.qrId === cleanQrId || p.user === cleanQrId);
 
     // If looking up demo token or empty array, fallback to defaultDemoProfile
     if (!profile && (cleanQrId.toLowerCase().includes('demo') || demoProfiles.length === 0)) {
@@ -117,6 +154,7 @@ router.get('/:qrId', async (req, res) => {
     res.json({
       qrId: profile.qrId || cleanQrId,
       patientName: profile.user?.name || 'Demo Emergency Patient',
+      fullPatientName: profile.user?.name || 'Demo Emergency Patient',
       isQrActive: true,
       hasEmergencyContacts: true,
       emergencyOptions: ['CONTACT_FAMILY', 'CALL_108', 'FIRST_AID', 'BLOOD_BANK', 'HOSPITAL_LOGIN']
@@ -139,7 +177,11 @@ router.post('/contact-family', async (req, res) => {
     let contactCount = 1;
 
     if (global.isDbConnected) {
-      const profile = await Profile.findOne({ qrId }).populate('user', 'name');
+      let profile = await Profile.findOne({ qrId }).populate('user', 'name');
+      if (!profile && mongoose.Types.ObjectId.isValid(qrId)) {
+        profile = await Profile.findOne({ user: qrId }).populate('user', 'name');
+      }
+
       if (profile) {
         patientName = profile.user?.name || 'Patient';
         contactCount = profile.emergencyContacts?.length || 1;
