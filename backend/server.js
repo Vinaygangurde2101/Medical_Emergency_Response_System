@@ -74,45 +74,44 @@ mountRoute('/ai', require('./routes/aiChat'));
 mountRoute('/analyze', require('./routes/analyze'));
 mountRoute('/schedule', require('./routes/schedule'));
 
+const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI || '';
+
 // Robust DB Connection Strategy (Primary Cloud -> Local Fallback -> Demo Mode)
 const connectDB = async () => {
   const options = {
-    serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 10000,
-    family: 4 // Force IPv4 to prevent Windows SRV DNS resolution failures
+    serverSelectionTimeoutMS: 3000,
+    connectTimeoutMS: 5000,
+    family: 4
   };
 
-  // 1. Try Primary Configured URI
-  try {
-    console.log('🔄 Connecting to MongoDB (Primary URI)...');
-    await mongoose.connect(MONGO_URI, options);
-    global.isDbConnected = true;
-    console.log('✅ MongoDB Connected Successfully (Primary Database)');
-    return;
-  } catch (primaryErr) {
-    console.warn('⚠️ Primary MongoDB Connection Warning:', primaryErr.message);
-  }
-
-  // 2. Try Local Fallback URI
-  const LOCAL_URI = 'mongodb://127.0.0.1:27017/mers_sid';
-  if (MONGO_URI !== LOCAL_URI) {
+  if (MONGO_URI && MONGO_URI.trim() !== '') {
     try {
-      console.log('🔄 Attempting Local MongoDB Fallback (127.0.0.1:27017)...');
-      await mongoose.connect(LOCAL_URI, options);
+      console.log('🔄 Connecting to MongoDB Cloud...');
+      await mongoose.connect(MONGO_URI, options);
       global.isDbConnected = true;
-      console.log('✅ Connected to Local MongoDB Successfully');
+      console.log('✅ MongoDB Connected Successfully');
       return;
-    } catch (localErr) {
-      console.warn('⚠️ Local MongoDB Connection Warning:', localErr.message);
+    } catch (primaryErr) {
+      console.warn('⚠️ MongoDB Cloud Connection Warning:', primaryErr.message);
     }
   }
 
-  // 3. Fallback to Demo Mode
+  // Try Local Fallback URI only when running locally (not on Vercel serverless)
+  if (!process.env.VERCEL && !process.env.LAMBDA_TASK_ROOT) {
+    const LOCAL_URI = 'mongodb://127.0.0.1:27017/mers_sid';
+    if (MONGO_URI !== LOCAL_URI) {
+      try {
+        await mongoose.connect(LOCAL_URI, options);
+        global.isDbConnected = true;
+        console.log('✅ Connected to Local MongoDB');
+        return;
+      } catch (localErr) {}
+    }
+  }
+
   global.isDbConnected = false;
-  console.log('--------------------------------------------------');
-  console.log('⚠️ DATABASE STATUS: DEMO MODE ACTIVE (In-Memory Data Engine)');
-  console.log('💡 Note: All app features (Patient, Hospital, QR, Blood Bank, AI) are 100% operational.');
-  console.log('--------------------------------------------------');
+  console.log('⚠️ DATABASE STATUS: DEMO MODE ACTIVE (In-Memory Engine)');
 };
 
 connectDB();
